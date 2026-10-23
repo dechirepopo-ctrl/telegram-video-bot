@@ -54,8 +54,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. تأكد من صحة الرابط وأنه حساب عام.")
 
 if __name__ == "__main__":
-    TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FX"
-    
+    TOKEN = "8958964646:AAG273q21YtxZ8qPRegX7r4UD0BJau7HvgM"
+
     app = ApplicationBuilder().token(TOKEN).build()
     
     app.add_handler(CommandHandler("start", start))
