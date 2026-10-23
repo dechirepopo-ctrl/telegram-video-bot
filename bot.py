@@ -29,11 +29,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     output_filename = f"video_{chat_id}.mp4"
 
     ydl_opts = {
-        'outtmpl': output_filename,
-        'format': 'best[ext=mp4]/best',
-        'no_warnings': True,
-        'quiet': True,
-    }
+    'format': 'best',
+    'quiet': True,
+    'no_warnings': True,
+}
+
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
