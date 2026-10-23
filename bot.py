@@ -4,7 +4,7 @@ import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
-# إعداد السجلات
+# إعداد السجلات لمتابعة أي أخطاء
 logging.basicConfig(level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,7 +26,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     output_filename = f"insta_{update.message.chat_id}.mp4"
 
-    # خيارات خفيفة ومخصصة لإنستغرام لمنع الحظر والتعليق
+    # خيارات مخصصة للتحميل المباشر وتجاوز حظر إنستغرام
     ydl_opts = {
         'format': 'best',
         'outtmpl': output_filename,
@@ -51,7 +51,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(f"Insta Download Error: {e}")
         if os.path.exists(output_filename):
             os.remove(output_filename)
-        await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. أرسل رابط Reel آخر للتجربة.")
+        await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. تأكد من صحة الرابط وأنه حساب عام.")
 
 if __name__ == "__main__":
     TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
