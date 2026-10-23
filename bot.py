@@ -56,7 +56,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     # استبدل النص التالي بتوكن البوت الخاص بك من BotFather
-    TOKEN = "ضع_توكن_البوت_هنا"
+        TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
+
     
     app = ApplicationBuilder().token(TOKEN).build()
     
