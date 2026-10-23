@@ -4,19 +4,11 @@ import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
-# إعداد سجلات الأخطاء لرؤية التفاصيل في Render
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 
-# أمر البداية /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "مرحباً بك! 🎬\n\nأرسل لي أي رابط فيديو (يوتيوب، تيك توك، إنستغرام) وسأقوم بتحميله لك فوراً."
-    )
+    await update.message.reply_text("Hello! Send me any video link (YouTube, TikTok, Instagram) and I will download it for you.")
 
-# دالة معالجة واستخراج الفيديو
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -25,11 +17,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not url.startswith("http"):
         return
 
-    # تنظيف رابط إنستغرام من أجزاء التتبع الإضافية
     if "instagram.com" in url and "?" in url:
         url = url.split("?")[0]
 
-    status_msg = await update.message.reply_text("⏳ جاري تحميل الفيديو، يرجى الانتظار...")
+    status_msg = await update.message.reply_text("Downloading video, please wait...")
 
     output_filename = f"video_{update.message.chat_id}.mp4"
 
@@ -51,8 +42,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.remove(output_filename)
             await status_msg.delete()
         else:
-            await status_msg.edit_text("❌ لم نتمكن من العثور على الفيديو.")
+            await status_msg.edit_text("Could not find the video.")
             
     except Exception as e:
-        logging.error(f"Download Error: {e}")
-        await status_msg.edit_text("❌ عذ
+        logging.error(f"Error: {e}")
+        await status_msg.edit_text("An error occurred while downloading.")
+
+if __name__ == "__main__":
+    TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
+    
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    
+    app.run_polling()
