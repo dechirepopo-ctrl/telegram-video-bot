@@ -1,64 +1,53 @@
 
-import os
 import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
+import os
 import yt_dlp
+from telegram import Update
+from telegram.ext import ContextTypes
 
+# إعداد التسجيل لرؤية الأخطاء في Render Logs
 logging.basicConfig(level=logging.INFO)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "مرحباً بك! 🎬\n\n"
-        "أرسل لي أي رابط فيديو (يوتيوب، تيك توك، إنستغرام) وسأقوم بتحميله لك فوراً."
-    )
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
-    chat_id = update.message.chat_id
+    if not update.message or not update.message.text:
+        return
+
+    url = update.message.text.strip()
     
-    if text.lower() == 'start':
-        await start(update, context)
+    # التأكد من أن النص يبدأ برابط
+    if not (url.startswith("http://") or url.startswith("https://")):
         return
 
-    if not text.startswith("http"):
-        await update.message.reply_text("الرجاء إرسال رابط فيديو صحيح يبدأ بـ http أو أرسل start للبدء.")
-        return
+    # تنظيف رابط إنستغرام من الاستعلامات الإضافية التي قد تسبب مشاكل
+    if "instagram.com" in url and "?" in url:
+        url = url.split("?")[0]
 
-    status_msg = await update.message.reply_text("⏳ جاري تحميل الفيديو، يرجى الانتظار...")
-    output_filename = f"video_{chat_id}.mp4"
+    status_msg = await update.message.reply_text("⏳ جاري جلب الفيديو...")
 
     ydl_opts = {
-    'format': 'best',
-    'quiet': True,
-    'no_warnings': True,
-}
-
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': 'downloaded_video.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+        'nocheckcertificate': True,
+        # إضافة وكيل مستخدم لمنع الحظر
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([text])
-        
-        if os.path.exists(output_filename):
-            with open(output_filename, 'rb') as video_file:
-                await context.bot.send_video(chat_id=chat_id, video=video_file)
-            os.remove(output_filename)
-            await status_msg.delete()
-        else:
-            await status_msg.edit_text("❌ لم نتمكن من العثور على الفيديو.")
+            info = ydl.extract_info(url, download=True)
+            filename = ydl.prepare_filename(info)
+
+        with open(filename, 'rb') as video_file:
+            await update.message.reply_video(video=video_file)
+            
+        # حذف الفيديو المحفوظ بعد الإرسال لتوفير المساحة
+        if os.path.exists(filename):
+            os.remove(filename)
+            
+        await status_msg.delete()
 
     except Exception as e:
-        if os.path.exists(output_filename):
-            os.remove(output_filename)
-        await status_msg.edit_text("❌ حدث خطأ أثناء تحميل الفيديو. تأكد من صحة الرابط.")
-
-if __name__ == '__main__':
-    TOKEN = "8958964646:AAFv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
-    
-    app = ApplicationBuilder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-    
-    print("🤖 البوت يعمل بنجاح...")
-    app.run_polling()
+        logging.error(f"Error downloading video: {e}")
+        await status_msg.edit_text(f"❌ لم نتمكن من العثور على الفيديو أو تنزيله.\nالتفاصيل: {str(e)[:100]}")
