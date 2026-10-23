@@ -4,16 +4,19 @@ import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
-# إعداد التسجيل للتحقق من أي أخطاء
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+# إعداد سجلات الأخطاء لرؤية التفاصيل في Render
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-# دالة الاستجابة للأمر /start
+# أمر البداية /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "مرحباً بك! 🎬\n\nأرسل لي أي رابط فيديو (يوتيوب، تيك توك، إنستغرام) وسأقوم بتحميله لك فوراً."
     )
 
-# دالة تحميل الفيديو ومعالجة الروابط
+# دالة معالجة واستخراج الفيديو
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -22,7 +25,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not url.startswith("http"):
         return
 
-    # تنظيف رابط إنستغرام من رموز التتبع الإضافية
+    # تنظيف رابط إنستغرام من أجزاء التتبع الإضافية
     if "instagram.com" in url and "?" in url:
         url = url.split("?")[0]
 
@@ -52,19 +55,4 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
     except Exception as e:
         logging.error(f"Download Error: {e}")
-        await status_msg.edit_text("❌ عذراً، حدث خطأ أثناء تحميل الفيديو. تأكد من صحة الرابط.")
-
-if __name__ == "__main__":
-    # استبدل النص التالي بتوكن البوت الخاص بك من BotFather
-        TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
-
-    
-    app = ApplicationBuilder().token(TOKEN).build()
-    
-    # ربط الأمر /start أولاً لضمان سرعة الاستجابة
-    app.add_handler(CommandHandler("start", start))
-    
-    # ربط معالج النصوص والروابط
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-    
-    app.run_polling()
+        await status_msg.edit_text("❌ عذ
