@@ -17,19 +17,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not url.startswith("http"):
         return
 
-    if "instagram.com" in url and "?" in url:
+    # تنظيف الرابط من معاملات التتبع
+    if "?" in url:
         url = url.split("?")[0]
 
-    status_msg = await update.message.reply_text("Downloading video, please wait...")
+    status_msg = await update.message.reply_text("⏳ Downloading video, please wait...")
 
     output_filename = f"video_{update.message.chat_id}.mp4"
 
+    # خيارات متقدمة لتجاوز حماية إنستغرام وتيك توك
     ydl_opts = {
-        'format': 'best',
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         'outtmpl': output_filename,
         'quiet': True,
         'no_warnings': True,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'check_formats': False,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'referer': 'https://www.instagram.com/',
     }
 
     try:
@@ -42,11 +46,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.remove(output_filename)
             await status_msg.delete()
         else:
-            await status_msg.edit_text("Could not find the video.")
+            await status_msg.edit_text("❌ Could not find or process the video.")
             
     except Exception as e:
-        logging.error(f"Error: {e}")
-        await status_msg.edit_text("An error occurred while downloading.")
+        logging.error(f"Download Error: {e}")
+        # مسح أي ملف مؤقت في حال الفشل
+        if os.path.exists(output_filename):
+            os.remove(output_filename)
+        await status_msg.edit_text("❌ Failed to download this video. Try a YouTube or TikTok link instead!")
 
 if __name__ == "__main__":
     TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
