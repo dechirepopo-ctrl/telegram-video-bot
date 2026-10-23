@@ -4,10 +4,11 @@ import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
+# إعداد السجلات
 logging.basicConfig(level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! Send me any video link (YouTube, TikTok, Instagram) and I will download it for you.")
+    await update.message.reply_text("أهلاً بك! أرسل لي رابط فيديو من إنستغرام وسأقوم بتحميله لك فوراً.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -17,23 +18,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not url.startswith("http"):
         return
 
-    # تنظيف الرابط من معاملات التتبع
-    if "?" in url:
+    # تنظيف رابط إنستغرام لضمان قراءته بشكل صحيح
+    if "instagram.com" in url and "?" in url:
         url = url.split("?")[0]
 
-    status_msg = await update.message.reply_text("⏳ Downloading video, please wait...")
+    status_msg = await update.message.reply_text("⏳ جاري تحميل فيديو إنستغرام، يرجى الانتظار...")
 
-    output_filename = f"video_{update.message.chat_id}.mp4"
+    output_filename = f"insta_{update.message.chat_id}.mp4"
 
-    # خيارات متقدمة لتجاوز حماية إنستغرام وتيك توك
+    # خيارات خفيفة ومخصصة لإنستغرام لمنع الحظر والتعليق
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'format': 'best',
         'outtmpl': output_filename,
         'quiet': True,
         'no_warnings': True,
-        'check_formats': False,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'referer': 'https://www.instagram.com/',
+        'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
     }
 
     try:
@@ -46,14 +45,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.remove(output_filename)
             await status_msg.delete()
         else:
-            await status_msg.edit_text("❌ Could not find or process the video.")
+            await status_msg.edit_text("❌ لم نتمكن من إيجاد الفيديو، تأكد أن الحساب ليس خاصاً (Private).")
             
     except Exception as e:
-        logging.error(f"Download Error: {e}")
-        # مسح أي ملف مؤقت في حال الفشل
+        logging.error(f"Insta Download Error: {e}")
         if os.path.exists(output_filename):
             os.remove(output_filename)
-        await status_msg.edit_text("❌ Failed to download this video. Try a YouTube or TikTok link instead!")
+        await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. أرسل رابط Reel آخر للتجربة.")
 
 if __name__ == "__main__":
     TOKEN = "8958964646:AAfv2W0zGBiWLbMlAhT7z-A3sG7d2FXukQo"
